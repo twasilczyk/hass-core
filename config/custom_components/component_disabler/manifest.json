@@ -1,0 +1,12 @@
+{
+  "domain": "component_disabler",
+  "name": "Component Disabler",
+  "documentation": "",
+  "dependencies": [],
+  "codeowners": [],
+  "requirements": [],
+  "version": "0.1.0",
+  "iot_class": "local_push",
+  "config_flow": false,
+  "integration_type": "system"
+}
