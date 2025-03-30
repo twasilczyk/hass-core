@@ -2,11 +2,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable, Awaitable
 
 from homeassistant.core import HomeAssistant
 
-from .const import CLOUD_DATA_KEY, ACCOUNT_LINK_KEY
+from .const import ACCOUNT_LINK_KEY, CLOUD_DATA_KEY
 
 _LOGGER = logging.getLogger(__name__)
 
