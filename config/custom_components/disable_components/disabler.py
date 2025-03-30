@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, List
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import CLOUD_DATA_KEY
+
 #from .oauth import setup_cloud_mocks
 
 _LOGGER = logging.getLogger(__name__)
