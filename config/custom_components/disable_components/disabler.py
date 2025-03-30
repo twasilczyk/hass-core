@@ -9,7 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import CLOUD_DATA_KEY
-from .oauth import setup_cloud_mocks
+#from .oauth import setup_cloud_mocks
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,8 +42,8 @@ async def disable_component(hass: HomeAssistant, component_domain: str) -> None:
     await wait_for_component(hass, component_domain, timeout=30)
 
     # Special case handling for specific components
-    if component_domain == CLOUD_DATA_KEY:
-        await setup_cloud_mocks(hass)
+    #if component_domain == CLOUD_DATA_KEY:
+    #    await setup_cloud_mocks(hass)
 
     # Special handling for components that register in the frontend
     try:

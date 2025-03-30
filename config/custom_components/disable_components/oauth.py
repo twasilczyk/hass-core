@@ -11,6 +11,7 @@ from .const import CLOUD_DATA_KEY, ACCOUNT_LINK_KEY
 _LOGGER = logging.getLogger(__name__)
 
 
+# TODO: unnecessary at all?
 async def provide_empty_oauth_implementation(
     hass: HomeAssistant, domain: str
 ) -> list:
@@ -19,6 +20,7 @@ async def provide_empty_oauth_implementation(
     return []
 
 
+# TODO: unnecessary?
 async def setup_cloud_mocks(hass: HomeAssistant) -> None:
     """Set up mocks for cloud component to prevent errors in other components."""
     _LOGGER.info("Setting up cloud component mocks")
