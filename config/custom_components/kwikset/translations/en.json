@@ -1,0 +1,36 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Device is already configured"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "email": "Email",
+                    "password": "Password"
+
+                }
+            },
+            "select_home": {
+                "data": {
+                    "home_id": "Home"
+                }
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+              "data": {
+                "refresh_interval":  "How often the integration will poll the device in seconds"
+              },
+                "description": "Configure Kwikset options"
+            }
+        }
+    }
+}
