@@ -1,6 +1,6 @@
 {
-  "domain": "component_disabler",
-  "name": "Component Disabler",
+  "domain": "disable_components",
+  "name": "Disable Components",
   "documentation": "",
   "dependencies": [],
   "codeowners": [],
