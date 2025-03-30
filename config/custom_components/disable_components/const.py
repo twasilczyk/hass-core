@@ -1,7 +1,7 @@
-"""Constants for the Component Disabler integration."""
+"""Constants for the Disable Components integration."""
 from typing import Final
 
-DOMAIN: Final = "component_disabler"
+DOMAIN: Final = "disable_components"
 DEFAULT_COMPONENTS_TO_DISABLE = ["cloud"]
 
 # Mock implementations for components with special requirements

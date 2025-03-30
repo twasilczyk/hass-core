@@ -15,30 +15,24 @@ from .disabler import unload_component
 
 _LOGGER = logging.getLogger(__name__)
 
-# Configuration schema
+# Configuration schema - direct list of components to disable
 CONFIG_SCHEMA = vol.Schema(
     {
-        DOMAIN: vol.Schema(
-            {
-                vol.Optional("components", default=DEFAULT_COMPONENTS_TO_DISABLE): 
-                    vol.All(cv.ensure_list, [cv.string])
-            }
-        )
+        DOMAIN: vol.All(cv.ensure_list, [cv.string])
     },
     extra=vol.ALLOW_EXTRA,
 )
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the component disabler."""
-    conf = config.get(DOMAIN, {})
-    components_to_disable = conf.get("components", DEFAULT_COMPONENTS_TO_DISABLE)
+    """Set up the disable_components integration."""
+    components_to_disable = config.get(DOMAIN, DEFAULT_COMPONENTS_TO_DISABLE)
     
     if not components_to_disable:
         _LOGGER.warning("No components specified to disable, component will do nothing")
         return True
     
-    _LOGGER.info("Component Disabler will disable: %s", ", ".join(components_to_disable))
+    _LOGGER.info("Disable Components will disable: %s", ", ".join(components_to_disable))
 
     # Ensure all components to disable are loaded first
     for component in components_to_disable:
