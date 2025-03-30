@@ -1,6 +1,7 @@
 """Component disabling functionality."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, List
 
@@ -13,36 +14,33 @@ from .oauth import setup_cloud_mocks
 _LOGGER = logging.getLogger(__name__)
 
 
-async def ensure_dependencies(hass: HomeAssistant, components_to_disable: list[str]) -> None:
-    """Ensure all components to disable are loaded first."""
-    for component in components_to_disable:
-        if component not in hass.config.components:
-            _LOGGER.debug("Waiting for %s to be loaded before disabling it", component)
-            # This will ensure the component gets loaded
-            try:
-                await hass.config.async_domain_component_dependencies(component)
-            except Exception as ex:
-                _LOGGER.warning(
-                    "Error loading dependencies for %s, may fail to disable: %s",
-                    component, str(ex)
-                )
+async def wait_for_component(hass: HomeAssistant, component: str, timeout: int = 30) -> bool:
+    if component in hass.config.components:
+        return True
+
+    _LOGGER.debug("Waiting for %s to load", component)
+    for i in range(timeout):
+        if component in hass.config.components:
+            _LOGGER.debug("Component %s is now loaded", component)
+            return True
+        await asyncio.sleep(1)
+
+    _LOGGER.warning("Component %s did not load after waiting %d seconds", component, timeout)
+    return False
 
 
 async def disable_components(hass: HomeAssistant, components_to_disable: list[str]) -> None:
     """Disable specified components."""
     _LOGGER.debug("Home Assistant started, disabling selected integrations...")
     for component in components_to_disable:
-        if component in hass.config.components:
-            await unload_component(hass, component)
-        else:
-            _LOGGER.warning(
-                "Component %s was not loaded, cannot disable", component
-            )
+        await disable_component(hass, component)
 
 
-async def unload_component(hass: HomeAssistant, component_domain: str) -> None:
-    """Unload a specific component."""
+async def disable_component(hass: HomeAssistant, component_domain: str) -> None:
+    """Disable a specific component."""
     _LOGGER.info("Disabling %s integration", component_domain)
+
+    await wait_for_component(hass, component_domain, timeout=30)
 
     # Special case handling for specific components
     if component_domain == CLOUD_DATA_KEY:
