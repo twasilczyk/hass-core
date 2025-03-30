@@ -22,22 +22,22 @@ async def provide_empty_oauth_implementation(
 async def setup_cloud_mocks(hass: HomeAssistant) -> None:
     """Set up mocks for cloud component to prevent errors in other components."""
     _LOGGER.info("Setting up cloud component mocks")
-    
+
     # Create a minimal mock for the cloud data
     if CLOUD_DATA_KEY not in hass.data:
         hass.data[CLOUD_DATA_KEY] = {}
-    
+
     # Handle account linking functionality
     if ACCOUNT_LINK_KEY not in hass.data:
         hass.data[ACCOUNT_LINK_KEY] = {}
-    
+
     account_link_funcs = hass.data[ACCOUNT_LINK_KEY]
-    
+
     # Add empty implementations for OAuth to prevent errors
     async def mock_account_link(hass: HomeAssistant, domain: str) -> list:
         _LOGGER.debug("Providing mock account link for %s", domain)
         return []
-    
+
     # Register the mock implementation function
     for domain in hass.config.components:
         if domain not in account_link_funcs:
