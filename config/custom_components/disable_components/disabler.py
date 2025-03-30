@@ -30,6 +30,7 @@ async def ensure_dependencies(hass: HomeAssistant, components_to_disable: list[s
 
 async def disable_components(hass: HomeAssistant, components_to_disable: list[str]) -> None:
     """Disable specified components."""
+    _LOGGER.debug("Home Assistant started, disabling selected integrations...")
     for component in components_to_disable:
         if component in hass.config.components:
             await unload_component(hass, component)
