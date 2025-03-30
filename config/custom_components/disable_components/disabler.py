@@ -14,26 +14,25 @@ from .oauth import setup_cloud_mocks
 _LOGGER = logging.getLogger(__name__)
 
 
-async def wait_for_component(hass: HomeAssistant, component: str, timeout: int = 30) -> bool:
+async def wait_for_component(hass: HomeAssistant, component: str, timeout: int = 30) -> None:
     if component in hass.config.components:
-        return True
+        return
 
     _LOGGER.debug("Waiting for %s to load", component)
     for i in range(timeout):
         if component in hass.config.components:
             _LOGGER.debug("Component %s is now loaded", component)
-            return True
+            return
         await asyncio.sleep(1)
 
     _LOGGER.warning("Component %s did not load after waiting %d seconds", component, timeout)
-    return False
 
 
 async def disable_components(hass: HomeAssistant, components_to_disable: list[str]) -> None:
     """Disable specified components."""
     _LOGGER.debug("Home Assistant started, disabling selected integrations...")
     for component in components_to_disable:
-        await disable_component(hass, component)
+        hass.async_create_task(disable_component(hass, component))
 
 
 async def disable_component(hass: HomeAssistant, component_domain: str) -> None:
