@@ -13,6 +13,32 @@ from .oauth import setup_cloud_mocks
 _LOGGER = logging.getLogger(__name__)
 
 
+async def ensure_dependencies(hass: HomeAssistant, components_to_disable: list[str]) -> None:
+    """Ensure all components to disable are loaded first."""
+    for component in components_to_disable:
+        if component not in hass.config.components:
+            _LOGGER.debug("Waiting for %s to be loaded before disabling it", component)
+            # This will ensure the component gets loaded
+            try:
+                await hass.config.async_domain_component_dependencies(component)
+            except Exception as ex:
+                _LOGGER.warning(
+                    "Error loading dependencies for %s, may fail to disable: %s",
+                    component, str(ex)
+                )
+
+
+async def disable_components(hass: HomeAssistant, components_to_disable: list[str]) -> None:
+    """Disable specified components."""
+    for component in components_to_disable:
+        if component in hass.config.components:
+            await unload_component(hass, component)
+        else:
+            _LOGGER.warning(
+                "Component %s was not loaded, cannot disable", component
+            )
+
+
 async def unload_component(hass: HomeAssistant, component_domain: str) -> None:
     """Unload a specific component."""
     _LOGGER.info("Disabling %s integration", component_domain)
@@ -20,7 +46,7 @@ async def unload_component(hass: HomeAssistant, component_domain: str) -> None:
     # Special case handling for specific components
     if component_domain == CLOUD_DATA_KEY:
         await setup_cloud_mocks(hass)
-    
+
     # Special handling for components that register in the frontend
     try:
         # For components that register UI panels
@@ -47,7 +73,7 @@ async def unload_component(hass: HomeAssistant, component_domain: str) -> None:
         if hasattr(component_data, "async_stop") and callable(component_data.async_stop):
             _LOGGER.debug("Stopping %s services", component_domain)
             await component_data.async_stop()
-        
+
         # If it's not cloud, remove component data
         # We keep a mock cloud data to prevent errors
         if component_domain != CLOUD_DATA_KEY:
@@ -65,7 +91,7 @@ async def unload_component(hass: HomeAssistant, component_domain: str) -> None:
     ]
 
     if config_entries:
-        _LOGGER.debug("Unloading %d %s config entries", 
+        _LOGGER.debug("Unloading %d %s config entries",
                      len(config_entries), component_domain)
         for entry in config_entries:
             await hass.config_entries.async_unload(entry.entry_id)
