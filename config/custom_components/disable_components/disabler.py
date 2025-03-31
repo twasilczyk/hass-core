@@ -57,14 +57,6 @@ async def disable_component(hass: HomeAssistant, component_domain: str) -> None:
     except Exception as ex:
         _LOGGER.warning("Error removing frontend panel for %s: %s", component_domain, ex)
 
-    # Check if component data exists
-    if component_domain not in hass.data:
-        _LOGGER.warning(
-            "%s component not found in hass.data, might not be loaded",
-            component_domain
-        )
-        # Continue anyway to try other methods
-
     # Try to stop component services if possible
     if component_domain in hass.data:
         component_data = hass.data[component_domain]
