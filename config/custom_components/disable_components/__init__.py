@@ -5,13 +5,14 @@ import logging
 import voluptuous as vol
 from typing import Final
 
-from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
 from .disabler import disable_components
+from .tasks import cancel_tracked_tasks
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,5 +42,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def on_startup(event: Event) -> None:
         await disable_components(hass, components_to_disable)
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, on_startup)
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, cancel_tracked_tasks)
 
     return True

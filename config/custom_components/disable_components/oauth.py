@@ -3,32 +3,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, List, Callable
+from typing import Any
 
-from homeassistant.core import HomeAssistant, callback, Event
-from homeassistant.const import EVENT_HOMEASSISTANT_STOP
+from homeassistant.core import HomeAssistant
 
 from .const import CLOUD_DATA_KEY
+from .tasks import track_task
 
 _LOGGER = logging.getLogger(__name__)
-_ACTIVE_TASKS: List[asyncio.Task] = []
-
-# Register a shutdown handler to cancel any tracked tasks
-@callback
-def _register_shutdown_handler(hass: HomeAssistant) -> None:
-    """Register a shutdown handler to cancel tracked tasks."""
-    @callback
-    def cancel_tracked_tasks(event: Event) -> None:
-        """Cancel all tracked tasks at shutdown."""
-        if not _ACTIVE_TASKS:
-            return
-        
-        _LOGGER.debug("Cancelling %d tracked OAuth tasks at shutdown", len(_ACTIVE_TASKS))
-        for task in _ACTIVE_TASKS:
-            if not task.done():
-                task.cancel()
-    
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, cancel_tracked_tasks)
 
 def patch_cloud_oauth_implementation(hass: HomeAssistant) -> None:
     """Patch the cloud's OAuth2 implementation to properly handle task cancellation."""
@@ -64,18 +46,7 @@ def patch_cloud_oauth_implementation(hass: HomeAssistant) -> None:
                      f"flow={flow_id}" in task_str)):
                     
                     _LOGGER.debug("Found and tracking OAuth token task for flow_id=%s", flow_id)
-                    
-                    if task not in _ACTIVE_TASKS:
-                        _ACTIVE_TASKS.append(task)
-                        
-                        # Clean up the task from tracking when it completes
-                        @callback
-                        def remove_task(_) -> None:
-                            """Remove the task from the tracking list when done."""
-                            if task in _ACTIVE_TASKS:
-                                _ACTIVE_TASKS.remove(task)
-                        
-                        task.add_done_callback(remove_task)
+                    track_task(task)
             
             return url
         
@@ -83,8 +54,7 @@ def patch_cloud_oauth_implementation(hass: HomeAssistant) -> None:
         CloudOAuth2Implementation.async_generate_authorize_url = patched_async_generate_authorize_url
         _LOGGER.debug("CloudOAuth2Implementation.async_generate_authorize_url successfully patched")
         
-        # Register the shutdown handler
-        _register_shutdown_handler(hass)
+        # No need to register the shutdown handler here, it's done in __init__.py
         
     except (ImportError, AttributeError) as ex:
         _LOGGER.debug("Error patching CloudOAuth2Implementation: %s", ex)
