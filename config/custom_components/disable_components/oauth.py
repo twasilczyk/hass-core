@@ -1,45 +1,90 @@
-"""OAuth implementation providers for disabled components."""
+"""OAuth handling functionality."""
 from __future__ import annotations
 
+import asyncio
 import logging
+from typing import Any, List, Callable
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback, Event
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 
-from .const import ACCOUNT_LINK_KEY, CLOUD_DATA_KEY
+from .const import CLOUD_DATA_KEY
 
 _LOGGER = logging.getLogger(__name__)
+_ACTIVE_TASKS: List[asyncio.Task] = []
 
+# Register a shutdown handler to cancel any tracked tasks
+@callback
+def _register_shutdown_handler(hass: HomeAssistant) -> None:
+    """Register a shutdown handler to cancel tracked tasks."""
+    @callback
+    def cancel_tracked_tasks(event: Event) -> None:
+        """Cancel all tracked tasks at shutdown."""
+        if not _ACTIVE_TASKS:
+            return
+        
+        _LOGGER.debug("Cancelling %d tracked OAuth tasks at shutdown", len(_ACTIVE_TASKS))
+        for task in _ACTIVE_TASKS:
+            if not task.done():
+                task.cancel()
+    
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, cancel_tracked_tasks)
 
-# TODO: unnecessary at all?
-async def provide_empty_oauth_implementation(
-    hass: HomeAssistant, domain: str
-) -> list:
-    """Provide an empty implementation for OAuth2 to prevent errors."""
-    _LOGGER.debug("Providing empty OAuth implementation for %s", domain)
-    return []
-
-
-# TODO: unnecessary?
-async def setup_cloud_mocks(hass: HomeAssistant) -> None:
-    """Set up mocks for cloud component to prevent errors in other components."""
-    _LOGGER.info("Setting up cloud component mocks")
-
-    # Create a minimal mock for the cloud data
-    if CLOUD_DATA_KEY not in hass.data:
-        hass.data[CLOUD_DATA_KEY] = {}
-
-    # Handle account linking functionality
-    if ACCOUNT_LINK_KEY not in hass.data:
-        hass.data[ACCOUNT_LINK_KEY] = {}
-
-    account_link_funcs = hass.data[ACCOUNT_LINK_KEY]
-
-    # Add empty implementations for OAuth to prevent errors
-    async def mock_account_link(hass: HomeAssistant, domain: str) -> list:
-        _LOGGER.debug("Providing mock account link for %s", domain)
-        return []
-
-    # Register the mock implementation function
-    for domain in hass.config.components:
-        if domain not in account_link_funcs:
-            account_link_funcs[domain] = mock_account_link
+def patch_cloud_oauth_implementation(hass: HomeAssistant) -> None:
+    """Patch the cloud's OAuth2 implementation to properly handle task cancellation."""
+    try:
+        from homeassistant.components.cloud import account_link
+        import hass_nabucasa
+        
+        _LOGGER.debug("Patching CloudOAuth2Implementation to properly handle shutdown")
+        
+        # Get the original implementation
+        if not hasattr(account_link, "CloudOAuth2Implementation"):
+            _LOGGER.debug("CloudOAuth2Implementation not found, skipping patch")
+            return
+        
+        CloudOAuth2Implementation = account_link.CloudOAuth2Implementation
+        
+        # Store the original method
+        original_async_generate_authorize_url = CloudOAuth2Implementation.async_generate_authorize_url
+        
+        # Create a simpler patched version that wraps the original method
+        async def patched_async_generate_authorize_url(self, flow_id: str) -> str:
+            """Generate a url for the user to authorize with task tracking for shutdown."""
+            # Call the original method
+            url = await original_async_generate_authorize_url(self, flow_id)
+            
+            # Find and track the task that was created by the original method
+            for task in asyncio.all_tasks():
+                # Look for tasks that match the await_tokens pattern
+                task_str = str(task)
+                if ("await_tokens" in task_str and 
+                    ("CloudOAuth2Implementation" in task_str or 
+                     "account_link.py" in task_str or 
+                     f"flow={flow_id}" in task_str)):
+                    
+                    _LOGGER.debug("Found and tracking OAuth token task for flow_id=%s", flow_id)
+                    
+                    if task not in _ACTIVE_TASKS:
+                        _ACTIVE_TASKS.append(task)
+                        
+                        # Clean up the task from tracking when it completes
+                        @callback
+                        def remove_task(_) -> None:
+                            """Remove the task from the tracking list when done."""
+                            if task in _ACTIVE_TASKS:
+                                _ACTIVE_TASKS.remove(task)
+                        
+                        task.add_done_callback(remove_task)
+            
+            return url
+        
+        # Apply the patch
+        CloudOAuth2Implementation.async_generate_authorize_url = patched_async_generate_authorize_url
+        _LOGGER.debug("CloudOAuth2Implementation.async_generate_authorize_url successfully patched")
+        
+        # Register the shutdown handler
+        _register_shutdown_handler(hass)
+        
+    except (ImportError, AttributeError) as ex:
+        _LOGGER.debug("Error patching CloudOAuth2Implementation: %s", ex)
