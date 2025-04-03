@@ -12,6 +12,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
 from .disabler import disable_components
+from .smartthings import handle_smartthings_for_cloud_disabled
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +38,13 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         _LOGGER.warning("No components specified to disable, %s will do nothing", DOMAIN)
         return True
     _LOGGER.info("Components to disable: %s", ", ".join(components_to_disable))
+
+    # Check if cloud is in the list of components to disable
+    cloud_disabled = "cloud" in components_to_disable
+
+    # Apply SmartThings patch immediately if cloud will be disabled
+    if cloud_disabled:
+        await handle_smartthings_for_cloud_disabled(hass)
 
     async def on_startup(event: Event) -> None:
         await disable_components(hass, components_to_disable)
