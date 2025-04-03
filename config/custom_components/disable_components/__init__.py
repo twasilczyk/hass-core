@@ -39,15 +39,11 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         return True
     _LOGGER.info("Components to disable: %s", ", ".join(components_to_disable))
 
-    # Check if cloud is in the list of components to disable
-    cloud_disabled = "cloud" in components_to_disable
-
-    # Apply SmartThings patch immediately if cloud will be disabled
-    if cloud_disabled:
-        await handle_smartthings_for_cloud_disabled(hass)
-
     async def on_startup(event: Event) -> None:
         await disable_components(hass, components_to_disable)
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, on_startup)
+
+    if "cloud" in components_to_disable:
+        await handle_smartthings_for_cloud_disabled(hass)
 
     return True

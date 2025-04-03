@@ -86,25 +86,17 @@ async def patch_smartthings_config_flow(hass: HomeAssistant) -> bool:
 async def handle_smartthings_for_cloud_disabled(hass: HomeAssistant) -> None:
     """Handle setup for SmartThings when cloud is disabled."""
     _LOGGER.warning("Cloud component will be disabled - applying SmartThings patch immediately")
-    await async_setup(hass)
-    
+    await patch_smartthings_config_flow(hass)
+
     # Also listen for when SmartThings is loaded in case immediate patching wasn't enough
     async def handle_component_loaded(event: Event) -> None:
         """Handle component loaded events to apply SmartThings patch at the right time."""
         component = event.data.get("component")
-        
+
         # Apply patch again when SmartThings is loaded if needed
         if component == "smartthings":
             _LOGGER.warning("SmartThings loaded with cloud disabled, applying patch again")
-            await async_setup(hass)
-    
+            await patch_smartthings_config_flow(hass)
+
     # Listen for component loaded events
     hass.bus.async_listen(EVENT_COMPONENT_LOADED, handle_component_loaded)
-
-
-async def async_setup(hass: HomeAssistant) -> bool:
-    """Set up SmartThings patch component."""
-    _LOGGER.info("Setting up SmartThings patch component")
-    success = await patch_smartthings_config_flow(hass)
-    _LOGGER.info("SmartThings patch setup result: %s", success)
-    return success

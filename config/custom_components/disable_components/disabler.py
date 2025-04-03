@@ -9,8 +9,6 @@ from homeassistant.core import HomeAssistant
 
 from .const import CLOUD_DATA_KEY
 
-#from .oauth import setup_cloud_mocks
-
 _LOGGER = logging.getLogger(__name__)
 
 
