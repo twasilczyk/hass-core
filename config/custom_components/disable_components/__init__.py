@@ -10,10 +10,10 @@ from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN
 from .disabler import disable_components
 from .smartthings import handle_smartthings_for_cloud_disabled
 
+DOMAIN: Final = "disable_components"
 _LOGGER = logging.getLogger(__name__)
 
 # Example configuration:
