@@ -11,7 +11,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .disabler import disable_components
-from .smartthings import handle_smartthings_for_cloud_disabled
+from .smartthings import setup_smartthings_hook
 
 DOMAIN: Final = "disable_components"
 _LOGGER = logging.getLogger(__name__)
@@ -44,6 +44,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, on_startup)
 
     if "cloud" in components_to_disable:
-        await handle_smartthings_for_cloud_disabled(hass)
+        await setup_smartthings_hook(hass)
 
     return True
