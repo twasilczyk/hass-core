@@ -2,14 +2,11 @@
 from __future__ import annotations
 
 import logging
-import traceback
 from typing import Any, Final
 
 from homeassistant.config_entries import ConfigFlowResult
-from homeassistant.core import Event, HomeAssistant
-from homeassistant.const import EVENT_COMPONENT_LOADED
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import importlib as hass_importlib
-from homeassistant.helpers.config_entry_oauth2_flow import async_get_implementations
 
 _LOGGER = logging.getLogger(__name__)
 DOMAIN: Final = "smartthings"
@@ -46,7 +43,7 @@ async def setup_task(hass: HomeAssistant) -> None:
 async def patched_async_step_user(
     self, user_input: dict[str, Any] | None = None
 ) -> ConfigFlowResult:
-    if not "cloud" in self.hass.config.components:
+    if "cloud" not in self.hass.config.components:
         _LOGGER.info("Adding cloud to components list to bypass SmartThings check")
         self.hass.config.components.add("cloud")
 
